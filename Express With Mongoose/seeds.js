@@ -1,7 +1,9 @@
 const mongoose = require('mongoose');
 const Product = require('./models/product');
-
+require('dotenv').config();
 mongoose.set('strictQuery', true);
+const dbUrl = process.env.DB_URL;
+// 
 mongoose.connect('mongodb://127.0.0.1:27017/farmStand')
 .then(() =>
 {

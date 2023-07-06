@@ -2,13 +2,22 @@ const express = require('express');
 const app = express();
 const path = require('path');
 const methodOverride = require('method-override')
-
+require('dotenv').config();
+const session = require('express-session');
+const MongoDBStore = require("connect-mongo");
 
 const Product = require('./models/product');
 
 const mongoose = require('mongoose');
 mongoose.set('strictQuery', true);
-mongoose.connect('mongodb://127.0.0.1:27017/farmStand')
+// 'mongodb://127.0.0.1:27017/farmStand'
+const dbUrl = process.env.DB_URL;
+mongoose.connect(dbUrl,     
+{
+        useNewUrlParser: true,
+        // useCreateIndex: true,                      NOT REQUIRED IN NEWER VERSION OF MONGOOSE
+        useUnifiedTopology: true
+})
 .then(() =>
 {
     console.log('Mongo Connection Open.');
@@ -19,6 +28,35 @@ mongoose.connect('mongodb://127.0.0.1:27017/farmStand')
     console.log(err);
 })
 
+
+const store = MongoDBStore.create({
+    mongoUrl: dbUrl,
+    secret: '4Wf!2^eoR9L7',
+    touchAfter: 24 * 60 * 60
+});
+
+store.on("error", function(e){
+    console.log("Session Store Error", e)
+})
+
+const sessionConfig = {
+
+    store,
+    name: 'products',
+    secret: "4Wf!2^eoR9L7",
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+        name: 'products',
+        httpOnly: true,
+        // secure: true,
+        expires: Date.now() + 1000 * 60 * 60 * 24 * 7, //1000 milliseconds in a second, 60 secs in a minute, 60 mins in an hour, 24 hours in a day and 7 days in a week
+        maxAge: 1000 * 60 * 60 * 24 * 7
+    }
+
+}
+
+app.use(session(sessionConfig));
 
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine',  'ejs');
